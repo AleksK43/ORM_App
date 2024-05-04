@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -10,19 +12,26 @@ using ORM_App.Models;
 
 namespace ORM_App.Controllers
 {
+    [Authorize]
     public class ExercisesController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly UserManager<IdentityUser> _userManager;
 
-        public ExercisesController(ApplicationDbContext context)
+        public ExercisesController(ApplicationDbContext context, UserManager<IdentityUser> userManager)
         {
             _context = context;
+            _userManager = userManager; 
         }
 
         // GET: Exercises
         public async Task<IActionResult> Index()
         {
-            var applicationDbContext = _context.Exercise.Include(e => e.ExerciseType).Include(e => e.Session);
+            var applicationDbContext = _context.Exercise
+                .Where(e => e.User.UserName == User.Identity.Name)
+                .Include(e => e.ExerciseType)
+                .Include(e => e.Session)
+                .Include(e=>e.User);
             return View(await applicationDbContext.ToListAsync());
         }
 
@@ -61,6 +70,10 @@ namespace ORM_App.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,Weight,NumOfReps,NumOfSeries,ExerciseTypeId,SessionId")] Exercise exercise)
         {
+            var user = await _userManager.FindByNameAsync(User.Identity.Name);
+
+            exercise.UserId = user.Id;  
+
             if (ModelState.IsValid)
             {
                 _context.Add(exercise);
