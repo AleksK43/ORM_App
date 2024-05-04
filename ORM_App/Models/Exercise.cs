@@ -1,4 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Identity; 
+
 
 namespace ORM_App.Models
 {
@@ -19,6 +21,6 @@ namespace ORM_App.Models
         public int SessionId { get; set; }
         
         public virtual Session? Session { get; set; }
-
+        public virtual IdentityUser? User { get; set;  }
     }
 }
